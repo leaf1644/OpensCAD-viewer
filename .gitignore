@@ -1,0 +1,11 @@
+.DS_Store
+Thumbs.db
+*.bak
+*.tmp
+*.swp
+openscad.autosave
+*.scad.autosave
+export/*.stl
+export/*.3mf
+!export/.gitkeep
+renders/**/check.stl
