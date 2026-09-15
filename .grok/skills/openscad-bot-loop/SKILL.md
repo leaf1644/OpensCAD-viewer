@@ -19,7 +19,7 @@ Read `PROTOCOL.md` in that folder. Follow it. Do not improvise a second protocol
 3. Write `scad/<short_name>.scad` (parametric, overlapped cuts, `$fn` for print).
 4. Update `loop/STATUS.md`: increment `round`, `status: awaiting_bot_review`, set `model:`.
 5. Write `loop/HANDOFF.md` as the exact English message for Grok Bot (model path, round, what to inspect).
-6. Tell the user to paste that handoff to the OpenSCAD Reviewer Bot (after `git push` if they use git). Stop. Do not pretend the Bot has already seen the model.
+6. If the Bot already runs `grok`, tell the user to send **one** message to the Bot: run the tight loop in PROTOCOL.md. Otherwise tell them to paste `loop/HANDOFF.md`. Stop. Do not pretend the Bot has already seen the model.
 
 ## When the user returns a Bot review
 

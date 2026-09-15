@@ -1,20 +1,16 @@
 # OpenSCAD print loop (Grok Build + Grok Bot)
 
-You describe a real object. **Grok Build** writes the `.scad`. **Grok Bot** opens it in OpenSCAD on the Bot’s cloud computer, looks at the solid, and files correction requests. Grok Build patches. You only do the last print check.
-
-Official Grok Build cannot send a message into Grok Bot. This repo is the shared inbox.
+You describe a real object. **Grok Bot** looks at the solid in OpenSCAD on its cloud computer. **Grok Build** (`grok -p`) writes the `.scad`. Preferred: both on the Bot computer, so you are not the messenger. You only do the last print check.
 
 ```
 you (requirement)
-    → Grok Build writes spec + .scad + loop/HANDOFF.md
-        → you paste HANDOFF to Grok Bot (or git push, then tell Bot to pull)
-            → Bot: install OpenSCAD, CLI renders, GUI orbit
-            → Bot writes review/REVIEW.md + HANDOFF for Build
-        ← you paste that back into Grok Build (or git pull)
-    → Build fixes, new HANDOFF
-    → … until Bot PASS
-you open STL, then print
+    → Bot: grok -p writes/fixes .scad   (scripts/invoke-grok-build.sh)
+    → Bot: OpenSCAD GUI + PNG review
+    → FAIL → grok -p again, up to 6 rounds
+    → PASS → you check STL, then print
 ```
+
+If the Bot computer cannot sign in to `grok`, fall back to pasting `loop/HANDOFF.md` between this local Grok Build and the Bot. Do not let the Bot click through the Grok Build TUI.
 
 ## This computer
 

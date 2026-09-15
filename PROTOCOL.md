@@ -1,18 +1,28 @@
 # CAD loop protocol
 
-Grok Build writes OpenSCAD. Grok Bot reviews the model on **its cloud computer** with OpenSCAD. The user is the messenger until git remote is connected. The user does the final print check.
+Grok Build writes OpenSCAD. Grok Bot reviews the solid on **its cloud computer** with OpenSCAD. The user does the final print check.
 
-There is no official API between Grok Build and Grok Bot. The contract is these files.
+Preferred layout: **both run on the Bot computer.** Grok Bot is the outer loop (see the model). It must not type `.scad` by hand. For every code change it runs headless Grok Build:
+
+```
+grok --no-auto-update --always-approve --cwd /workspace/openscad-print-loop --max-turns 40 -p "..."
+```
+
+Do not drive the Grok Build TUI with mouse/keyboard computer-use. Use `grok -p` only.
+
+Fallback: if `grok` is not installed or not signed in on the Bot computer, the user is the messenger between local Grok Build and the Bot (paste `loop/HANDOFF.md`).
+
+There is no official API between the two products. The contract is these files plus that CLI.
 
 ## Roles
 
 | Role | Who | May edit |
 |---|---|---|
-| Designer | Grok Build (this coding agent) | `scad/`, `spec/`, `loop/STATUS.md`, `loop/HANDOFF.md` |
-| Reviewer | Grok Bot | `review/`, `renders/`, `loop/STATUS.md`, `loop/HANDOFF.md` |
+| Designer | `grok` CLI (on the Bot computer, or this local Grok Build session) | `scad/`, `spec/`, `loop/STATUS.md`, `loop/HANDOFF.md` |
+| Reviewer | Grok Bot vision + OpenSCAD | `review/`, `renders/`, `loop/STATUS.md`, `loop/HANDOFF.md` |
 | Printer | User | final yes/no to print; never skip Bot PASS |
 
-Grok Bot **must not** edit `.scad` files. If geometry is wrong, it files a correction request. Grok Build **must not** mark print-ready until Bot verdict is `PASS` and the user confirms.
+Grok Bot **must not** edit `.scad` except by invoking `scripts/invoke-grok-build.sh`. Grok Build **must not** mark print-ready until Bot verdict is `PASS` and the user confirms.
 
 ## Files
 
@@ -24,7 +34,8 @@ Grok Bot **must not** edit `.scad` files. If geometry is wrong, it files a corre
 | `renders/` | Bot | PNG views + `openscad.log` |
 | `export/` | Build after PASS | STL / 3MF for the user to print |
 | `loop/STATUS.md` | both | Machine-readable loop state |
-| `loop/HANDOFF.md` | both | Paste-ready message for the other agent |
+| `loop/HANDOFF.md` | both | Paste-ready message when the tight loop is not available |
+| `loop/BUILD_PROMPT.md` | repo | Prompt fed to `scripts/invoke-grok-build.sh` |
 
 ## `loop/STATUS.md` fields
 
@@ -86,6 +97,22 @@ model: scad/<file>.scad
 
 `BLOCKED` if OpenSCAD cannot run, the file does not compile, or the Bot cannot see the model.
 
+## Tight loop on the Bot computer (preferred)
+
+After OpenSCAD and `grok` both work on the Agent Computer:
+
+1. User sends the real-object spec (here or in the Bot chat). Someone writes `spec/SPEC.md` once.
+2. Bot: `bash scripts/install-openscad.sh` and `bash scripts/install-grok-build.sh`.
+3. If `grok` needs login: hand the desktop to the user for `grok login`, **or** ask for `GROK_CODE_XAI_API_KEY` / `XAI_API_KEY` via the Bot **secure form** (never ordinary chat). Persist in the Bot computer environment.
+4. Bot runs `bash scripts/invoke-grok-build.sh` (Designer writes/fixes `.scad`).
+5. Bot runs `bash scripts/bot-review.sh`, opens the OpenSCAD GUI, orbits, writes `review/REVIEW.md`.
+6. On `FAIL`: run `invoke-grok-build.sh` again. Repeat from step 5.
+7. Stop at `PASS`, or after **6** Designer invocations, or on `BLOCKED`. Then tell the user. Do not keep spending tokens.
+
+`gui_opened: false` is only acceptable for `scad/smoke_test.scad`. A real part that could not be orbited is `BLOCKED` or `FAIL`, not `PASS`.
+
+Auth and `--always-approve` apply only inside `/workspace/openscad-print-loop`. The Bot still must not send, buy, or delete unrelated files.
+
 ## Designer (Grok Build) steps
 
 When the user describes a real object:
@@ -94,7 +121,7 @@ When the user describes a real object:
 2. Write or update `scad/<name>.scad`. Parameterize dimensions. Use overlap on holes/cuts. `$fn` high enough for print.
 3. Set STATUS `round` += 1 (or 1 if still 0), `status: awaiting_bot_review`, `model:` the active file.
 4. Write `loop/HANDOFF.md` as the exact message the user pastes to Grok Bot.
-5. Tell the user to send that handoff to the Bot (or `git push` then tell the Bot to pull).
+5. If the Bot computer already runs `grok`, tell the user to send one message: run the tight loop on this spec (no round-trip paste). Otherwise tell them to paste the handoff.
 
 When the user returns a Bot review (file, paste, or screenshot of REVIEW.md):
 
@@ -114,7 +141,7 @@ On each handoff:
 5. Compare what you see to `spec/SPEC.md`.
 6. Write `review/REVIEW.md`. Copy PNGs already written under `renders/`.
 7. Update STATUS and write `loop/HANDOFF.md` for Grok Build (verdict + error ids).
-8. Do not change `.scad`.
+8. Do not type `.scad` yourself. If this computer has working `grok`, run `bash scripts/invoke-grok-build.sh` instead of asking the user to paste a handoff.
 
 If GUI cannot start, still fill the review from PNGs and say `gui_opened: false`. `PASS` without GUI is allowed only for the smoke test. For a real part, prefer `FAIL` or `BLOCKED` if you could not orbit the solid.
 

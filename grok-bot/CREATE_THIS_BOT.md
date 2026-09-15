@@ -1,6 +1,6 @@
 # Create the reviewer Bot (once)
 
-Grok Build cannot message Grok Bot. You create one Bot and then paste `loop/HANDOFF.md` each round.
+Preferred: the Bot computer runs **OpenSCAD and** the `grok` CLI, so reviews and code fixes stay on that machine. You still create the Bot once. You are not the messenger after `grok login` works.
 
 ## Need
 
@@ -35,14 +35,13 @@ In the Bot conversation, attach this project (zip) or ask the Bot to save upload
 
 If you enable Settings → Agent → Execution on Local Computer, the Bot can read `C:\Users\leung\openscad-print-loop` on this PC. Keep approval on. The OpenSCAD GUI it uses for review should still be the **cloud** Agent Computer, not silently driving your desktop.
 
-6. Smoke test: paste the current `loop/HANDOFF.md` to the Bot.
-7. When it writes a review, paste `loop/HANDOFF.md` / `review/REVIEW.md` back into Grok Build (or `git pull` here and say “Bot finished round N”).
+6. Smoke test OpenSCAD: paste the current `loop/HANDOFF.md` to the Bot.
+7. Then tell the Bot: `bash scripts/install-grok-build.sh` and try `grok --version`. If it asks to log in, take over Agent Computer, run `grok login` in the Bot terminal, or submit an API key through the Bot secure form (not chat).
+8. Confirm a dummy `grok -p "reply PONG only"` works. After that, the Bot should call `scripts/invoke-grok-build.sh` itself instead of asking you to paste reviews back here.
 
 ## Each real part afterwards
 
-1. Tell Grok Build the object (sizes, what it must fit).
-2. Grok Build updates `spec/`, `scad/`, `loop/HANDOFF.md`.
-3. You paste that handoff to the Bot (after `git push` if using git).
-4. Bot reviews → you paste the Bot handoff back here.
-5. Repeat until Bot `PASS`.
-6. You open the STL / OpenSCAD yourself, then print.
+1. Tell this Grok Build **or** the Bot the object (sizes, what it must fit).
+2. If Bot `grok` works: one message to the Bot — run the tight loop in PROTOCOL.md. You wait until it says PASS or hits 6 rounds.
+3. If Bot `grok` does not work: paste `loop/HANDOFF.md` each round as before.
+4. You open the STL / OpenSCAD yourself, then print.
